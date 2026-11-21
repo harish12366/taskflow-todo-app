@@ -2,25 +2,25 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://6b01ef0c4a8cad87bd8f61da.mockapi.io/api/v1",
+  baseURL: "https://6b0200d34a8cad87bd8f724e.mockapi.io/api/v1",
 });
 
-// GET - Fetch all todos
-export const getTodos = () => {
-  return API.get("/todos");
+export const getTodos = async () => {
+  const response = await API.get("/todos");
+  return response.data;
 };
 
-// POST - Add todo
-export const createTodo = (todo) => {
-  return API.post("/todos", todo);
+export const addTodo = async (todo) => {
+  const response = await API.post("/todos", todo);
+  return response.data;
 };
 
-// PUT - Update todo
-export const updateTodo = (id, updatedData) => {
-  return API.put(`/todos/${id}`, updatedData);
+export const updateTodo = async (id, todo) => {
+  const response = await API.put(`/todos/${id}`, todo);
+  return response.data;
 };
 
-// DELETE - Delete todo
-export const deleteTodo = (id) => {
-  return API.delete(`/todos/${id}`);
+export const deleteTodo = async (id) => {
+  const response = await API.delete(`/todos/${id}`);
+  return response.data;
 };
