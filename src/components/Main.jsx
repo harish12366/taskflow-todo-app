@@ -3,7 +3,7 @@ import { useState } from "react";
 import TodoCard from "./TodoCard";
 
 function Main({
-  todos,
+  todos = [],
   loading,
   error,
   onAddTodo,
@@ -17,6 +17,8 @@ function Main({
   const [hideAllTasks, setHideAllTasks] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+
+  const safeTodos = Array.isArray(todos) ? todos : [];
 
   // Add Todo
   const handleAddTodo = async (e) => {
@@ -40,17 +42,19 @@ function Main({
 
     setSubmitting(true);
 
-    const success = await onAddTodo(
-      taskName.trim(),
-      description.trim()
-    );
+    try {
+      const success = await onAddTodo(
+        taskName.trim(),
+        description.trim()
+      );
 
-    setSubmitting(false);
-
-    if (success) {
-      setTaskName("");
-      setDescription("");
-      setErrors({});
+      if (success) {
+        setTaskName("");
+        setDescription("");
+        setErrors({});
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -62,7 +66,7 @@ function Main({
   };
 
   // Filter Todos
-  const filteredTodos = todos.filter((todo) => {
+  const filteredTodos = safeTodos.filter((todo) => {
     if (filter === "All") {
       return true;
     }
@@ -71,13 +75,13 @@ function Main({
   });
 
   // Statistics
-  const totalTasks = todos.length;
+  const totalTasks = safeTodos.length;
 
-  const completedTasks = todos.filter(
+  const completedTasks = safeTodos.filter(
     (todo) => todo.status === "Completed"
   ).length;
 
-  const pendingTasks = todos.filter(
+  const pendingTasks = safeTodos.filter(
     (todo) => todo.status === "Not Completed"
   ).length;
 
@@ -94,7 +98,6 @@ function Main({
 
       {/* Statistics */}
       <section className="stats-container">
-
         <div className="stat-card">
           <h2>{totalTasks}</h2>
           <p>Total Tasks</p>
@@ -109,12 +112,10 @@ function Main({
           <h2>{pendingTasks}</h2>
           <p>Pending</p>
         </div>
-
       </section>
 
       {/* Add Todo Form */}
       <section className="todo-form">
-
         <div className="form-heading">
           <h2>Create a new task</h2>
           <p>
@@ -123,7 +124,6 @@ function Main({
         </div>
 
         <form onSubmit={handleAddTodo}>
-
           <div className="form-group">
             <label>Task name</label>
 
@@ -177,7 +177,6 @@ function Main({
           </div>
 
           <div className="form-actions">
-
             <button
               type="button"
               className="clear-btn"
@@ -193,17 +192,13 @@ function Main({
             >
               {submitting ? "Adding..." : "+ Add Task"}
             </button>
-
           </div>
-
         </form>
       </section>
 
       {/* Tasks Section */}
       <section className="tasks-section">
-
         <div className="tasks-heading">
-
           <div>
             <h2>Your Tasks</h2>
             <p>
@@ -212,7 +207,6 @@ function Main({
           </div>
 
           <div className="task-controls">
-
             <select
               className="filter-select"
               value={filter}
@@ -232,13 +226,9 @@ function Main({
                 setHideAllTasks((prev) => !prev)
               }
             >
-              {hideAllTasks
-                ? "👁 Show Tasks"
-                : "🙈 Hide All"}
+              {hideAllTasks ? "👁 Show Tasks" : "🙈 Hide All"}
             </button>
-
           </div>
-
         </div>
 
         {/* API Error */}
@@ -248,18 +238,13 @@ function Main({
 
         {/* Todo List */}
         <div className="todo-list">
-
           {loading ? (
-
             <div className="empty-state">
               <h3>Loading tasks...</h3>
               <p>Please wait.</p>
             </div>
-
           ) : hideAllTasks ? (
-
             <div className="empty-state">
-
               <div className="empty-icon">👁</div>
 
               <h3>Tasks are hidden</h3>
@@ -275,11 +260,8 @@ function Main({
               >
                 Show Tasks
               </button>
-
             </div>
-
           ) : filteredTodos.length > 0 ? (
-
             filteredTodos.map((todo) => (
               <TodoCard
                 key={todo.id}
@@ -289,33 +271,25 @@ function Main({
                 onStatusChange={onStatusChange}
               />
             ))
-
           ) : (
-
             <div className="empty-state">
-
               <div className="empty-icon">📋</div>
 
               <h3>
-                {todos.length === 0
+                {safeTodos.length === 0
                   ? "No tasks yet"
                   : "No matching tasks"}
               </h3>
 
               <p>
-                {todos.length === 0
+                {safeTodos.length === 0
                   ? "Start by creating your first task."
                   : "Try selecting a different filter."}
               </p>
-
             </div>
-
           )}
-
         </div>
-
       </section>
-
     </main>
   );
 }

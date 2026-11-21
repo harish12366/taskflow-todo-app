@@ -1,5 +1,7 @@
 
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer } from "react";
+import Header from "./components/Header";
+import Main from "./components/Main";
 
 import {
   getTodos,
@@ -70,10 +72,6 @@ function App() {
     initialState
   );
 
-  const [todoName, setTodoName] = useState("");
-  const [description, setDescription] = useState("");
-  const [filter, setFilter] = useState("all");
-
   useEffect(() => {
     const fetchTodos = async () => {
       try {
@@ -81,7 +79,7 @@ function App() {
 
         dispatch({
           type: "SET_TODOS",
-          payload: data,
+          payload: Array.isArray(data) ? data : [],
         });
       } catch (error) {
         console.error("Fetch Error:", error);
@@ -96,16 +94,13 @@ function App() {
     fetchTodos();
   }, []);
 
-  const handleAdd = async (e) => {
-    e.preventDefault();
-
-    if (!todoName.trim()) return;
-
+  // Add Todo
+  const handleAddTodo = async (name, description) => {
     try {
       const newTodo = await createTodo({
-        name: todoName.trim(),
-        description: description.trim(),
-        status: "pending",
+        name,
+        description,
+        status: "Not Completed",
       });
 
       dispatch({
@@ -113,37 +108,32 @@ function App() {
         payload: newTodo,
       });
 
-      setTodoName("");
-      setDescription("");
+      return true;
     } catch (error) {
       console.error("Add Error:", error);
-      alert("Unable to add task.");
+      return false;
     }
   };
 
-  const handleStatus = async (todo) => {
-    const updatedStatus =
-      todo.status === "completed" ? "pending" : "completed";
-
+  // Edit Todo
+  const handleEditTodo = async (id, updatedTodo) => {
     try {
-      const updated = await updateTodo(todo.id, {
-        ...todo,
-        status: updatedStatus,
-      });
+      const updated = await updateTodo(id, updatedTodo);
 
       dispatch({
         type: "UPDATE_TODO",
         payload: updated,
       });
+
+      return true;
     } catch (error) {
-      console.error("Status Update Error:", error);
-      alert("Unable to update task.");
+      console.error("Edit Error:", error);
+      return false;
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this task?")) return;
-
+  // Delete Todo
+  const handleDeleteTodo = async (id) => {
     try {
       await deleteTodo(id);
 
@@ -151,157 +141,45 @@ function App() {
         type: "DELETE_TODO",
         payload: id,
       });
+
+      return true;
     } catch (error) {
       console.error("Delete Error:", error);
-      alert("Unable to delete task.");
+      return false;
     }
   };
 
-  const todos = Array.isArray(state.todos)
-    ? state.todos
-    : [];
+  // Change Status
+  const handleStatusChange = async (id, updatedTodo) => {
+    try {
+      const updated = await updateTodo(id, updatedTodo);
 
-  const filteredTodos = todos.filter((todo) => {
-    if (filter === "completed") {
-      return todo.status === "completed";
+      dispatch({
+        type: "UPDATE_TODO",
+        payload: updated,
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Status Error:", error);
+      return false;
     }
-
-    if (filter === "pending") {
-      return todo.status !== "completed";
-    }
-
-    return true;
-  });
-
-  const completedCount = todos.filter(
-    (todo) => todo.status === "completed"
-  ).length;
-
-  const pendingCount = todos.length - completedCount;
-
-  if (state.loading) {
-    return <div className="loading">Loading tasks...</div>;
-  }
-
-  if (state.error) {
-    return <div className="error-message">{state.error}</div>;
-  }
+  };
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>TaskFlow</h1>
-        <p>Organize your day, one task at a time.</p>
-      </header>
+    <>
+      <Header />
 
-      <main className="todo-container">
-        <section className="stats">
-          <div className="stat-card">
-            <span>Total Tasks</span>
-            <h2>{todos.length}</h2>
-          </div>
-
-          <div className="stat-card">
-            <span>Pending</span>
-            <h2>{pendingCount}</h2>
-          </div>
-
-          <div className="stat-card">
-            <span>Completed</span>
-            <h2>{completedCount}</h2>
-          </div>
-        </section>
-
-        <form className="todo-form" onSubmit={handleAdd}>
-          <input
-            type="text"
-            placeholder="Enter task name"
-            value={todoName}
-            onChange={(e) => setTodoName(e.target.value)}
-            required
-          />
-
-          <input
-            type="text"
-            placeholder="Enter description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-
-          <button type="submit">+ Add Task</button>
-        </form>
-
-        <section className="todo-section">
-          <div className="todo-heading">
-            <h2>My Tasks</h2>
-
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-            >
-              <option value="all">All Tasks</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-
-          {filteredTodos.length === 0 ? (
-            <div className="empty-state">
-              <h3>No tasks found</h3>
-              <p>Add a task to get started.</p>
-            </div>
-          ) : (
-            <div className="todo-list">
-              {filteredTodos.map((todo) => (
-                <div className="todo-card" key={todo.id}>
-                  <div className="todo-content">
-                    <h3
-                      className={
-                        todo.status === "completed"
-                          ? "completed"
-                          : ""
-                      }
-                    >
-                      {todo.name}
-                    </h3>
-
-                    <p>{todo.description}</p>
-
-                    <span
-                      className={
-                        todo.status === "completed"
-                          ? "completed-badge"
-                          : "pending-badge"
-                      }
-                    >
-                      {todo.status || "pending"}
-                    </span>
-                  </div>
-
-                  <div className="todo-actions">
-                    <button
-                      onClick={() => handleStatus(todo)}
-                      className="status-btn"
-                    >
-                      {todo.status === "completed"
-                        ? "Undo"
-                        : "Complete"}
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(todo.id)}
-                      className="delete-btn"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      </main>
-    </div>
+      <Main
+        todos={Array.isArray(state.todos) ? state.todos : []}
+        loading={state.loading}
+        error={state.error}
+        onAddTodo={handleAddTodo}
+        onEditTodo={handleEditTodo}
+        onDeleteTodo={handleDeleteTodo}
+        onStatusChange={handleStatusChange}
+      />
+    </>
   );
 }
 
